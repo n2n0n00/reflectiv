@@ -42,22 +42,32 @@ export default function ExportPage() {
 
   const absoluteDateRange: DateRange | null = useMemo(() => {
     if (selectedRange === "all") return null;
+
     if (selectedRange === "custom" && customRange.start && customRange.end) {
       return {
         start: new Date(customRange.start).toISOString(),
-        end: new Date(customRange.end).toISOString(),
+        end: new Date(customRange.end + "T23:59:59").toISOString(), // Include the entire end date
       };
     }
+
     const now = new Date();
-    let start: Date | undefined;
-    if (selectedRange === "week")
+    const end = new Date(); // Always use current time as end
+    let start: Date;
+
+    if (selectedRange === "week") {
       start = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
-    if (selectedRange === "month")
-      start = new Date(now.setMonth(now.getMonth() - 1));
-    if (selectedRange === "quarter")
-      start = new Date(now.setMonth(now.getMonth() - 3));
-    if (!start) return null;
-    return { start: start.toISOString(), end: new Date().toISOString() };
+    } else if (selectedRange === "month") {
+      start = new Date(now.getFullYear(), now.getMonth() - 1, now.getDate());
+    } else if (selectedRange === "quarter") {
+      start = new Date(now.getFullYear(), now.getMonth() - 3, now.getDate());
+    } else {
+      return null;
+    }
+
+    return {
+      start: start.toISOString(),
+      end: end.toISOString(),
+    };
   }, [selectedRange, customRange]);
 
   return (

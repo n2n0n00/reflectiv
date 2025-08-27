@@ -21,14 +21,19 @@ export function ExportPreview({
     const fetchEntries = async () => {
       if (!user) return;
       setLoading(true);
+
       let query = supabase
         .from("journal_entries")
         .select("id, content, template, template_color, created_at")
         .eq("user_id", user.id)
         .order("created_at", { ascending: false });
 
-      if (selectedTemplates?.length)
+      // Apply template filter only if templates are specifically selected
+      if (selectedTemplates && selectedTemplates.length > 0) {
         query = query.in("template", selectedTemplates);
+      }
+
+      // Apply date range filter
       if (absoluteDateRange?.start && absoluteDateRange?.end) {
         query = query
           .gte("created_at", absoluteDateRange.start)
@@ -36,20 +41,30 @@ export function ExportPreview({
       }
 
       const { data, error } = await query;
-      if (!error && data) setEntries(data);
+
+      if (error) {
+        console.error("Error fetching entries:", error);
+        setEntries([]);
+      } else if (data) {
+        setEntries(data);
+      }
+
       setLoading(false);
     };
 
     fetchEntries();
   }, [
     user?.id,
-    JSON.stringify(selectedTemplates),
-    JSON.stringify(absoluteDateRange),
+    supabase,
+    selectedTemplates, // Remove JSON.stringify as it's not needed for arrays
+    absoluteDateRange?.start,
+    absoluteDateRange?.end,
   ]);
 
   const totalWords = useMemo(() => {
     return entries.reduce(
-      (sum: any, e: any) => sum + (e.content?.split(/\s+/).length || 0),
+      (sum: number, entry: JournalEntry) =>
+        sum + (entry.content?.split(/\s+/).length || 0),
       0
     );
   }, [entries]);
@@ -76,9 +91,14 @@ export function ExportPreview({
           <>
             <div className="text-sm text-muted-foreground mb-4">
               Preview of entries that will be included in your export:
+              {selectedTemplates && selectedTemplates.length > 0 && (
+                <span className="ml-2">
+                  (Filtered by: {selectedTemplates.join(", ")})
+                </span>
+              )}
             </div>
             <div className="space-y-4 max-h-[500px] overflow-y-auto">
-              {entries.map((entry: any) => (
+              {entries.map((entry: JournalEntry) => (
                 <div
                   key={entry.id}
                   className="border border-border rounded-lg p-4 bg-muted/30"
@@ -86,7 +106,14 @@ export function ExportPreview({
                   <div className="space-y-3">
                     <div className="flex items-center justify-between">
                       <div className="flex items-center space-x-2">
-                        <Badge variant="outline" className="text-xs">
+                        <Badge
+                          variant="outline"
+                          className="text-xs"
+                          style={{
+                            borderColor: entry.template_color || undefined,
+                            color: entry.template_color || undefined,
+                          }}
+                        >
                           {entry.template}
                         </Badge>
                         <span className="text-sm text-muted-foreground">
