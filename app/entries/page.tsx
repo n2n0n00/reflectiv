@@ -448,7 +448,7 @@ const EntriesList = () => {
                       </Button>
                     </Link> */}
 
-                      <Link href={`/entry/${entry.id}`} passHref>
+                      {/* <Link href={`/entry/${entry.id}`} passHref>
                         <Button
                           asChild
                           variant="ghost"
@@ -457,7 +457,7 @@ const EntriesList = () => {
                         >
                           <span>Read More</span>
                         </Button>
-                      </Link>
+                      </Link> */}
                     </div>
                   </div>
                 </Link>
